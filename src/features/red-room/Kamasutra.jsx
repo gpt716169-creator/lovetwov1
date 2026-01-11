@@ -109,33 +109,37 @@ const Kamasutra = () => {
                                 <div className="absolute top-0 left-0 w-full h-1 bg-red-600/0 group-hover:bg-red-600 transition-colors"></div>
 
                                 {/* Card Content (Simplified for Grid) */}
-                                <div>
+                                <div className="flex-1">
                                     <h4 className="text-white font-bold text-lg leading-tight mb-1">{pose.name}</h4>
                                     <div className="flex gap-1 flex-wrap mt-1">
-                                        <span className="text-[9px] bg-white/10 px-1.5 py-0.5 rounded text-white/60">{pose.category}</span>
+                                        <span className="text-[9px] bg-white/10 px-1.5 py-0.5 rounded text-white/50">{pose.category}</span>
                                     </div>
-                                    <p className="text-white/40 text-xs line-clamp-3 mt-2">{pose.description}</p>
                                 </div>
 
-                                <div className="flex justify-end gap-2 mt-2">
-                                    <button
-                                        onClick={(e) => toggleStatus(e, pose.id, 'tried')}
-                                        className={clsx(
-                                            "w-8 h-8 rounded-full flex items-center justify-center transition-colors border",
-                                            status.tried ? "bg-green-500/20 border-green-500 text-green-400" : "border-white/10 text-white/20 hover:border-green-500/50"
-                                        )}
-                                    >
-                                        <span className="material-symbols-outlined text-sm">check</span>
-                                    </button>
-                                    <button
-                                        onClick={(e) => toggleStatus(e, pose.id, 'favorite')}
-                                        className={clsx(
-                                            "w-8 h-8 rounded-full flex items-center justify-center transition-colors border",
-                                            status.favorite ? "bg-red-500/20 border-red-500 text-red-500" : "border-white/10 text-white/20 hover:border-red-500/50"
-                                        )}
-                                    >
-                                        <span className="material-symbols-outlined text-sm">favorite</span>
-                                    </button>
+                                <div className="flex justify-between items-end mt-2 pt-2 border-t border-white/5">
+                                    <div className="text-[10px] text-white/20 font-mono">
+                                        LVL {pose.difficulty}
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={(e) => toggleStatus(e, pose.id, 'tried')}
+                                            className={clsx(
+                                                "w-8 h-8 rounded-full flex items-center justify-center transition-colors border",
+                                                status.tried ? "bg-green-500/20 border-green-500 text-green-400" : "border-white/10 text-white/20 hover:border-green-500/50"
+                                            )}
+                                        >
+                                            <span className="material-symbols-outlined text-sm">check</span>
+                                        </button>
+                                        <button
+                                            onClick={(e) => toggleStatus(e, pose.id, 'favorite')}
+                                            className={clsx(
+                                                "w-8 h-8 rounded-full flex items-center justify-center transition-colors border",
+                                                status.favorite ? "bg-red-500/20 border-red-500 text-red-500" : "border-white/10 text-white/20 hover:border-red-500/50"
+                                            )}
+                                        >
+                                            <span className="material-symbols-outlined text-sm">favorite</span>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         );
@@ -178,14 +182,33 @@ const Kamasutra = () => {
                                 <div className="flex gap-3">
                                     <button
                                         onClick={() => setSelectedPose(null)}
-                                        className="flex-1 py-4 bg-white/5 border border-white/10 text-white font-bold rounded-xl uppercase tracking-widest hover:bg-white/10 transition-colors"
+                                        className="flex-1 py-3 bg-white/5 border border-white/10 text-white font-bold rounded-xl uppercase tracking-widest hover:bg-white/10 transition-colors"
                                     >
                                         Закрыть
                                     </button>
-                                    <button // Toggle status inside modal? Maybe later. For now just close.
-                                        className="hidden flex-1 py-4 bg-red-600 text-white font-bold rounded-xl uppercase tracking-widest"
+
+                                    {/* Action Buttons in Modal */}
+                                    <button
+                                        onClick={(e) => toggleStatus(e, selectedPose.id, 'tried')}
+                                        className={clsx(
+                                            "flex-1 py-3 border font-bold rounded-xl uppercase tracking-widest flex items-center justify-center gap-2 transition-colors",
+                                            interactions[selectedPose.id]?.tried
+                                                ? "bg-green-500/20 border-green-500 text-green-400"
+                                                : "border-white/10 text-white/40 hover:text-white"
+                                        )}
                                     >
-                                        Mark as Done
+                                        <span className="material-symbols-outlined">check</span>
+                                    </button>
+                                    <button
+                                        onClick={(e) => toggleStatus(e, selectedPose.id, 'favorite')}
+                                        className={clsx(
+                                            "flex-1 py-3 border font-bold rounded-xl uppercase tracking-widest flex items-center justify-center gap-2 transition-colors",
+                                            interactions[selectedPose.id]?.favorite
+                                                ? "bg-red-500/20 border-red-500 text-red-500"
+                                                : "border-white/10 text-white/40 hover:text-white"
+                                        )}
+                                    >
+                                        <span className="material-symbols-outlined">favorite</span>
                                     </button>
                                 </div>
                             </div>
