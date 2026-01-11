@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import SexDice from '../features/red-room/SexDice';
 import FantasyDeck from '../features/red-room/FantasyDeck';
 import Kamasutra from '../features/red-room/Kamasutra';
+import { useTelegramAuth } from '../features/auth/TelegramAuth';
 
 const RedRoom = () => {
     const { profile } = useTelegramAuth();
