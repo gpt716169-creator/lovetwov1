@@ -108,7 +108,7 @@ export const TelegramAuthProvider = ({ children }) => {
 
     const getInviteLink = () => {
         if (!user) return "";
-        const botUsername = "TwoOfUsBot";
+        const botUsername = "loveistwobot";
         return `https://t.me/${botUsername}/app?startapp=ref_${user.id}`;
     };
 

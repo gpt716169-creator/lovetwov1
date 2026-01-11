@@ -1,4 +1,7 @@
-# React + Vite
+# LoveTwo Template
+
+[Telegram Bot Invite Link](https://t.me/loveistwobot/app)
+
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
