@@ -25,6 +25,7 @@ const GoalsWidget = () => {
         const { data } = await supabase
             .from('goals')
             .select('*')
+            .or(`created_by.eq.${profile.id},pending_approval_from.eq.${profile.id}${profile.partner_id ? `,created_by.eq.${profile.partner_id}` : ''}`)
             .order('created_at', { ascending: false });
         if (data) setGoals(data);
     };

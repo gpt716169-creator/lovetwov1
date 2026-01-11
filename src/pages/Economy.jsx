@@ -11,9 +11,20 @@ import ListsTab from '../features/economy/ListsTab';
 
 const Economy = () => {
     const navigate = useNavigate();
-    const { user } = useTelegramAuth();
+    const { user, profile } = useTelegramAuth();
     const { balance, tasks, wishlist, fetchEconomyData, isLoading, addCoins, spendCoins } = useEconomyStore();
     const [activeTab, setActiveTab] = useState('quests'); // 'quests' | 'wishlist' | 'lists'
+
+    // Filter data for privacy (Client-side safety net)
+    const validPartner = profile?.partner_id;
+    const filteredTasks = tasks.filter(t =>
+        t.created_by === profile?.id ||
+        (validPartner && t.created_by === validPartner)
+    );
+    const filteredWishlist = wishlist.filter(w =>
+        w.created_by === profile?.id ||
+        (validPartner && w.created_by === validPartner)
+    );
 
     useEffect(() => {
         if (user) {
@@ -78,7 +89,7 @@ const Economy = () => {
             <main className="flex flex-col gap-4 animate-fade-in min-h-[500px]">
                 {activeTab === 'quests' && (
                     <QuestsTab
-                        tasks={tasks}
+                        tasks={filteredTasks}
                         fetchEconomyData={fetchEconomyData}
                         balance={balance}
                         addCoins={addCoins}
@@ -87,7 +98,7 @@ const Economy = () => {
 
                 {activeTab === 'wishlist' && (
                     <WishlistTab
-                        wishlist={wishlist}
+                        wishlist={filteredWishlist}
                         fetchEconomyData={fetchEconomyData}
                         balance={balance}
                         spendCoins={spendCoins}
