@@ -88,7 +88,7 @@ const ImpulseButton = () => {
                         key={action.id}
                         whileTap={{ scale: 0.9 }}
                         onClick={() => handlePulse(action)}
-                        className={`relative h-full min-h-[60px] rounded-xl ${action.color}/10 border border-${action.color}/20 flex flex-col items-center justify-center gap-1 overflow-hidden group`}
+                        className={`relative h-full min-h-[60px] rounded-xl ${action.color}/10 border border-white/20 flex flex-col items-center justify-center gap-1 group`}
                     >
                         <div className={`p-1.5 rounded-full ${action.color}/20 text-${action.color} group-hover:scale-110 transition-transform`}>
                             <action.icon size={16} className={`text-${action.color.replace('bg-', '')}`} />
