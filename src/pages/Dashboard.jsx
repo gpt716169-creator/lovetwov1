@@ -27,12 +27,11 @@ const Dashboard = () => {
         if (profile?.id) {
             fetchDailyStats(profile.id);
             if (profile.partner_id) {
-                if (profile.partner_id) {
-                    fetchPartnerStats(profile.partner_id);
-                    fetchPartnerSignal(profile.partner_id);
-                }
+                fetchPartnerStats(profile.partner_id);
+                fetchPartnerSignal(profile.partner_id);
             }
-        }, [user, profile]);
+        }
+    }, [user, profile]);
 
     const fetchDailyStats = async (profileId) => {
         const today = new Date().toISOString().split('T')[0];
