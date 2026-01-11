@@ -18,6 +18,7 @@ const Dashboard = () => {
     const [mood, setMood] = useState('Loved');
     const [score, setScore] = useState(4.5);
     const [partnerStats, setPartnerStats] = useState({ mood: null, score: null });
+    const [partnerSignal, setPartnerSignal] = useState(false);
 
     useEffect(() => {
         if (user) {
@@ -26,10 +27,12 @@ const Dashboard = () => {
         if (profile?.id) {
             fetchDailyStats(profile.id);
             if (profile.partner_id) {
-                fetchPartnerStats(profile.partner_id);
+                if (profile.partner_id) {
+                    fetchPartnerStats(profile.partner_id);
+                    fetchPartnerSignal(profile.partner_id);
+                }
             }
-        }
-    }, [user, profile]);
+        }, [user, profile]);
 
     const fetchDailyStats = async (profileId) => {
         const today = new Date().toISOString().split('T')[0];
@@ -57,6 +60,25 @@ const Dashboard = () => {
 
         if (data) {
             setPartnerStats({ mood: data.mood_label, score: data.day_score });
+        }
+        if (data) {
+            setPartnerStats({ mood: data.mood_label, score: data.day_score });
+        }
+    };
+
+    const fetchPartnerSignal = async (partnerId) => {
+        const { data } = await supabase
+            .from('profiles')
+            .select('wants_intimacy_at')
+            .eq('id', partnerId)
+            .single();
+
+        if (data?.wants_intimacy_at) {
+            const signalTime = new Date(data.wants_intimacy_at);
+            const diffMinutes = (new Date() - signalTime) / (1000 * 60);
+            if (diffMinutes < 240) { // 4 hours active
+                setPartnerSignal(true);
+            }
         }
     };
 
@@ -146,6 +168,22 @@ const Dashboard = () => {
                     <div className="flex items-center gap-1">
                         <span className="material-symbols-outlined text-[14px]">star</span>
                         <span>{partnerStats.score || "?"}/10</span>
+                    </div>
+                </div>
+            )}
+
+            {/* INTIMACY SIGNAL NOTIFICATION */}
+            {partnerSignal && (
+                <div className="mx-2 mt-2 p-4 bg-gradient-to-r from-red-600 to-pink-600 rounded-2xl shadow-[0_0_20px_rgba(220,38,38,0.6)] flex items-center justify-between text-white animate-pulse-slow relative overflow-hidden group">
+                    <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20 mix-blend-overlay"></div>
+                    <div className="flex items-center gap-3 relative z-10">
+                        <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+                            <span className="material-symbols-outlined text-2xl animate-bounce">local_fire_department</span>
+                        </div>
+                        <div>
+                            <h3 className="font-black uppercase tracking-wider text-sm">Партнер хочет близости!</h3>
+                            <p className="text-[10px] text-white/80 font-medium">Сигнал из Красной Комнаты 🔥</p>
+                        </div>
                     </div>
                 </div>
             )}

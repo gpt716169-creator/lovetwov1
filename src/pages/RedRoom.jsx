@@ -6,6 +6,7 @@ import FantasyDeck from '../features/red-room/FantasyDeck';
 import Kamasutra from '../features/red-room/Kamasutra';
 
 const RedRoom = () => {
+    const { profile } = useTelegramAuth();
     const [synced, setSynced] = useState(false);
     const [activeTab, setActiveTab] = useState('cards'); // 'cards' | 'dice' | 'kamasutra'
     const [secureMode, setSecureMode] = useState(false); // If true, blurs EVERYTHING
@@ -59,6 +60,25 @@ const RedRoom = () => {
                     </div>
                 </div>
             </header>
+
+            {/* QUICK ACTIONS (Signal) */}
+            {synced && (
+                <div className="px-6 mb-4 w-full text-center z-20 relative">
+                    <button
+                        onClick={async () => {
+                            if (!profile?.id) return;
+                            if (window.confirm("Отправить сигнал партнеру? 🔥")) {
+                                const { error } = await supabase.from('profiles').update({ wants_intimacy_at: new Date() }).eq('id', profile.id);
+                                if (!error) alert("Сигнал отправлен! 😈");
+                            }
+                        }}
+                        className="w-full py-4 bg-gradient-to-r from-red-600 to-pink-600 rounded-2xl shadow-[0_0_20px_rgba(220,38,38,0.5)] border border-white/20 text-white font-black uppercase tracking-widest text-sm hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2"
+                    >
+                        <span className="material-symbols-outlined filled animate-pulse">local_fire_department</span>
+                        <span>Хочу секса</span>
+                    </button>
+                </div>
+            )}
 
             <main className="flex-1 flex flex-col items-center p-6 gap-6 z-10 w-full max-w-md mx-auto">
 
