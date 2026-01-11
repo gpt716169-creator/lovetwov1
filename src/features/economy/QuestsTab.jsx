@@ -33,6 +33,10 @@ const QuestsTab = ({ tasks, fetchEconomyData, balance, addCoins }) => {
             setDesc('');
             setReward(50);
             fetchEconomyData(user.id);
+            // Telegram Notification
+            import('../../services/telegramNotificationService').then(({ TelegramService }) => {
+                TelegramService.notifyNewTask(profile.partner_id, profile.first_name, title, reward);
+            });
         }
         setLoading(false);
     };

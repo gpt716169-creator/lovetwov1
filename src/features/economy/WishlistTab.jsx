@@ -46,6 +46,12 @@ const WishlistTab = ({ wishlist, fetchEconomyData, balance, spendCoins }) => {
             setDesc('');
             setPrice(100);
             fetchEconomyData(user.id);
+            // Telegram Notification (Only for Wishes/Buy items)
+            if (itemType === 'buy') {
+                import('../../services/telegramNotificationService').then(({ TelegramService }) => {
+                    TelegramService.notifyNewWish(profile.partner_id, profile.first_name, title, price);
+                });
+            }
         }
         setLoading(false);
     };

@@ -69,7 +69,13 @@ const RedRoom = () => {
                             if (!profile?.id) return;
                             if (window.confirm("Отправить сигнал партнеру? 🔥")) {
                                 const { error } = await supabase.from('profiles').update({ wants_intimacy_at: new Date() }).eq('id', profile.id);
-                                if (!error) alert("Сигнал отправлен! 😈");
+                                if (!error) {
+                                    alert("Сигнал отправлен! 😈");
+                                    // Telegram Notification
+                                    import('../../services/telegramNotificationService').then(({ TelegramService }) => {
+                                        TelegramService.notifyIntimacySignal(profile.partner_id, profile.first_name);
+                                    });
+                                }
                             }
                         }}
                         className="w-full py-4 bg-gradient-to-r from-red-600 to-pink-600 rounded-2xl shadow-[0_0_20px_rgba(220,38,38,0.5)] border border-white/20 text-white font-black uppercase tracking-widest text-sm hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2"

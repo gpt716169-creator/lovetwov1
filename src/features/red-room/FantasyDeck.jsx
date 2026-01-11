@@ -41,6 +41,11 @@ const FantasyDeck = () => {
         setNewDesc('');
         setIsAddMode(false);
         fetchFantasies();
+
+        // Telegram Notification
+        import('../../services/telegramNotificationService').then(({ TelegramService }) => {
+            TelegramService.notifyNewFantasy(profile.partner_id, profile.first_name, newTitle);
+        });
     };
 
     const deleteFantasy = async (e, id) => {
