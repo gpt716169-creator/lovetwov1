@@ -1,0 +1,79 @@
+@import "tailwindcss";
+
+:root {
+  /* Default Red/Pink Theme */
+  --color-primary: #ff4d70;
+  --color-primary-dark: #e03e5e;
+  --color-background-light: #f8f5f6;
+  --color-background-dark: #180a0c;
+  --color-surface-dark: #2a1216;
+  --color-glow: rgba(255, 77, 112, 0.5);
+}
+
+/* Green/Sage Theme */
+[data-theme='green'] {
+  --color-primary: #10B981;
+  --color-primary-dark: #059669;
+  --color-background-light: #ecfdf5;
+  --color-background-dark: #011c16;
+  --color-surface-dark: #06382a;
+  --color-glow: rgba(16, 185, 129, 0.4);
+}
+
+/* Blue/Sky Theme */
+[data-theme='blue'] {
+  --color-primary: #3b82f6;
+  --color-primary-dark: #2563eb;
+  --color-background-light: #eff6ff;
+  --color-background-dark: #0b1120;
+  --color-surface-dark: #1e293b;
+  --color-glow: rgba(59, 130, 246, 0.4);
+}
+
+body {
+  min-height: 100vh;
+  /* Mobile browser height fix */
+  min-height: 100dvh;
+  background-color: var(--color-background-dark);
+  color: white;
+}
+
+/* Utilities */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.glass-panel {
+  background: var(--color-surface-dark);
+  /* Adding a slight transparency if needed, but using variable for base color first */
+  background: color-mix(in srgb, var(--color-surface-dark), transparent 10%);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.glass-nav {
+  background: var(--color-surface-dark);
+  background: color-mix(in srgb, var(--color-surface-dark), transparent 5%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+.filled {
+  font-variation-settings: 'FILL' 1;
+}
+
+/* Card Gradients */
+.card-gradient {
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(35, 15, 19, 0.9) 60%, rgba(35, 15, 19, 1) 100%);
+}
