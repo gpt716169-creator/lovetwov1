@@ -65,28 +65,25 @@ const QuizzesList = () => {
     const viewResult = (attempt) => {
         setCurrentAttempt(attempt);
         setCurrentQuiz(attempt.quiz);
-        setAiResult(null); // Reset AI result when opening new result view
+        if (attempt.ai_analysis) {
+            setAiResult(attempt.ai_analysis);
+        } else {
+            setAiResult(null);
+        }
         setView('result');
     };
 
-    // --- GAMEPLAY LOGIC ---
+    // ... GAMEPLAY LOGIC ...
 
     const handleAnswer = async (option) => {
-        // If option is string, save it directly (for "Custom variant" inputs later if we support them fully)
-        // For now, index or string.
+        // ... (existing code, no change needed here) ...
         const val = currentQuiz.questions[step].options.indexOf(currentQuiz.questions[step].options[option]) !== -1 ? option : option;
-
-        // Optimistic update for UI highlighting
         const newAnswers = { ...answers, [step]: val };
         setAnswers(newAnswers);
-
-        // DELAY for visual feedback (1s)
         await new Promise(r => setTimeout(r, 600));
-
         if (step < currentQuiz.questions.length - 1) {
             setStep(prev => prev + 1);
         } else {
-            // Finished
             if (view === 'play_init') submitInitiator(val);
             if (view === 'play_partner') submitPartner(val);
         }
@@ -95,7 +92,6 @@ const QuizzesList = () => {
 
     const submitInitiator = async (finalAnswerVal) => {
         const finalAnswers = { ...answers, [step]: finalAnswerVal }; // Include last step
-
         await supabase.from('quiz_attempts').insert({
             quiz_id: currentQuiz.id,
             initiator_id: profile.id,
@@ -109,14 +105,12 @@ const QuizzesList = () => {
 
     const submitPartner = async (finalAnswerVal) => {
         const finalGuesses = { ...answers, [step]: finalAnswerVal };
-
         await supabase.from('quiz_attempts')
             .update({
                 partner_guesses: finalGuesses,
-                status: 'completed' // Ready for analysis
+                status: 'completed'
             })
             .eq('id', currentAttempt.id);
-
         setView('list');
         fetchAttempts();
         alert("Квиз завершен! Можно смотреть результаты.");
@@ -134,45 +128,61 @@ const QuizzesList = () => {
             const openai = new OpenAI({ apiKey, dangerouslyAllowBrowser: true });
 
             const quizPoints = attempt.quiz.questions.map((q, i) => {
-                const initAnsIdx = attempt.initiator_answers[i];
-                const partGuessIdx = attempt.partner_guesses[i];
-                const initAns = q.options[initAnsIdx] || "Свой ответ";
-                const partGuess = q.options[partGuessIdx] || "Свой ответ";
-                return `Вопрос: ${q.question}. ${attempt.initiator?.first_name} выбрал: "${initAns}". ${attempt.partner?.first_name || 'Партнер'} думал, что выберет: "${partGuess}".`;
-            }).join('\n');
+                // Ensure we handle both string keys and number keys, and fallback safely
+                const initAnsIdx = attempt.initiator_answers ? (attempt.initiator_answers[i] ?? attempt.initiator_answers[String(i)]) : null;
+                const partGuessIdx = attempt.partner_guesses ? (attempt.partner_guesses[i] ?? attempt.partner_guesses[String(i)]) : null;
+
+                const initAns = (initAnsIdx !== null && q.options[initAnsIdx]) ? q.options[initAnsIdx] : "Нет ответа";
+                const partGuess = (partGuessIdx !== null && q.options[partGuessIdx]) ? q.options[partGuessIdx] : "Нет ответа";
+
+                return `Вопрос ${i + 1}: "${q.question}"\n- ${attempt.initiator?.first_name || 'Инициатор'} выбрал: "${initAns}"\n- ${attempt.partner?.first_name || 'Партнер'} предполагал: "${partGuess}"`;
+            }).join('\n\n');
 
             const prompt = `
-            Ты - семейный психолог. Проанализируй результаты квиза "${attempt.quiz.title}".
-            
-            Данные:
+            Ты - опытный семейный психолог и эксперт по отношениям. Проанализируй результаты парного квиза "${attempt.quiz.title}".
+
+            КОНТЕКСТ И ОТВЕТЫ:
             ${quizPoints}
-            
-            Задача:
-            1. Найди, где пара совпала (хорошее понимание).
-            2. Найди разрывы (где партнер ошибся в предположениях). Что это значит?
-            3. Дай конкретный совет паре, исходя из их ответов (например, про языки любви).
-            
-            Формат ответа JSON:
+
+            ЗАДАЧА:
+            1. Проанализируй, насколько хорошо партнеры знают друг друга (совпадения выбора и догадки).
+            2. Выдели темы, где возникло недопонимание (если партнер не угадал выбор).
+            3. Дай конкретный, добрый и полезный совет для этой пары, основываясь ИМЕННО на этих ответах. Избегай общих фраз.
+
+            ФОРМАТ ОТВЕТА (JSON):
             {
-                "summary": "Краткий вывод",
-                "detailed_analysis": "Развернутый совет..."
+                "summary": "Краткое резюме совместимости (1-2 предложения)",
+                "detailed_analysis": "Подробный разбор совпадений и несовпадений + Совет."
             }
             `;
 
             const completion = await openai.chat.completions.create({
-                messages: [{ role: "system", content: "Ты JSON-психолог." }, { role: "user", content: prompt }],
+                messages: [{ role: "system", content: "Ты отвечаешь только в формате JSON." }, { role: "user", content: prompt }],
                 model: "gpt-4o-mini",
                 response_format: { type: "json_object" }
             });
 
             const result = JSON.parse(completion.choices[0].message.content);
+
+            // Save to DB
+            const { error } = await supabase.from('quiz_attempts')
+                .update({ ai_analysis: result })
+                .eq('id', attempt.id);
+
+            if (error) {
+                console.error("Failed to save analysis:", error);
+                // We show result anyway, but warn user silently in console
+            } else {
+                // Update local state to reflect saved analysis
+                setCurrentAttempt(prev => ({ ...prev, ai_analysis: result }));
+            }
+
             setAiResult(result);
-            setView('result'); // Back to result view with AI data ready
-            setCurrentAttempt(attempt);
+            setView('result');
 
         } catch (e) {
             console.error(e);
-            alert("AI Error: " + e.message);
+            alert("Ошибка AI Анализа: " + e.message);
             setView('list');
         }
     };
