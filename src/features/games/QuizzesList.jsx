@@ -45,6 +45,21 @@ const QuizzesList = () => {
         if (data) setActiveAttempts(data);
     };
 
+    // --- DELETE FUNCTIONS ---
+    const deleteAttempt = async (e, id) => {
+        e.stopPropagation();
+        if (!window.confirm("Удалить историю этого квиза?")) return;
+        await supabase.from('quiz_attempts').delete().eq('id', id);
+        fetchAttempts();
+    };
+
+    const deleteCustomQuiz = async (e, id) => {
+        e.stopPropagation();
+        if (!window.confirm("Удалить этот квиз навсегда?")) return;
+        await supabase.from('quizzes').delete().eq('id', id);
+        fetchQuizzes();
+    };
+
     // --- GAME FLOW START ---
 
     const startQuizAsInitiator = (quiz) => {
@@ -228,36 +243,41 @@ const QuizzesList = () => {
                         <div>
                             <h3 className="text-white/60 font-bold uppercase text-xs mb-2 pl-1">История / Активные</h3>
                             <div className="flex gap-2 overflow-x-auto pb-4 hide-scrollbar">
-                                {activeAttempts.map(att => {
-                                    const isInit = att.initiator_id === profile.id;
-                                    const isWaiting = att.status === 'waiting_partner';
-                                    const canPlay = !isInit && isWaiting;
-                                    const isDone = att.status === 'completed';
-
-                                    return (
+                                {activeAttempts.map(att => (
+                                    <div key={att.id} className="relative group">
                                         <button
-                                            key={att.id}
                                             onClick={() => {
+                                                const isInit = att.initiator_id === profile.id;
+                                                const isWaiting = att.status === 'waiting_partner';
+                                                const canPlay = !isInit && isWaiting;
+                                                const isDone = att.status === 'completed';
+
                                                 if (canPlay) playAsPartner(att);
                                                 else if (isDone) viewResult(att);
                                                 else alert("Ждем партнера...");
                                             }}
                                             className={clsx(
                                                 "bg-surface-dark border rounded-xl p-3 min-w-[160px] text-left relative overflow-hidden shrink-0 transition-opacity",
-                                                canPlay ? "border-primary animate-pulse-slow" : "border-white/10",
-                                                isDone ? "opacity-80" : "opacity-100"
+                                                (!att.initiator_id || att.status === 'waiting_partner') && att.initiator_id !== profile.id ? "border-primary animate-pulse-slow" : "border-white/10",
+                                                att.status === 'completed' ? "opacity-80" : "opacity-100"
                                             )}
                                         >
                                             <p className="text-white font-bold text-sm truncate pr-2">{att.quiz?.title}</p>
                                             <p className="text-white/40 text-[10px] mt-1">
-                                                {isDone ? "Завершено • Результат" :
-                                                    canPlay ? "Ваш ход! Угадайте ответы" :
+                                                {att.status === 'completed' ? "Завершено • Результат" :
+                                                    (att.initiator_id !== profile.id && att.status === 'waiting_partner') ? "Ваш ход! Угадайте ответы" :
                                                         "Ждем партнера..."}
                                             </p>
-                                            {isDone && <span className="absolute top-2 right-2 w-2 h-2 bg-green-500 rounded-full"></span>}
+                                            {att.status === 'completed' && <span className="absolute top-2 right-2 w-2 h-2 bg-green-500 rounded-full"></span>}
                                         </button>
-                                    );
-                                })}
+                                        <button
+                                            onClick={(e) => deleteAttempt(e, att.id)}
+                                            className="absolute -top-2 -right-2 w-6 h-6 bg-red-500/80 rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                                        >
+                                            <span className="material-symbols-outlined text-sm">close</span>
+                                        </button>
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     )}
@@ -265,21 +285,30 @@ const QuizzesList = () => {
                     {/* Quiz Library */}
                     <div className="grid grid-cols-2 gap-3">
                         {quizzes.map(quiz => (
-                            <button
-                                key={quiz.id}
-                                onClick={() => startQuizAsInitiator(quiz)}
-                                className="relative h-[160px] rounded-2xl overflow-hidden group text-left p-4 flex flex-col justify-end shadow-lg"
-                            >
-                                <div className={clsx("absolute inset-0 transition-transform group-hover:scale-110 bg-gradient-to-br",
-                                    quiz.is_system ? "from-indigo-500 to-purple-600" : "from-emerald-500 to-teal-600"
-                                )}></div>
-                                <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors"></div>
+                            <div key={quiz.id} className="relative group h-[160px]">
+                                <button
+                                    onClick={() => startQuizAsInitiator(quiz)}
+                                    className="absolute inset-0 w-full h-full rounded-2xl overflow-hidden text-left p-4 flex flex-col justify-end shadow-lg"
+                                >
+                                    <div className={clsx("absolute inset-0 transition-transform group-hover:scale-110 bg-gradient-to-br",
+                                        quiz.is_system ? "from-indigo-500 to-purple-600" : "from-emerald-500 to-teal-600"
+                                    )}></div>
+                                    <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors"></div>
 
-                                <div className="relative z-10">
-                                    <h3 className="text-white font-bold text-lg leading-tight mb-1 line-clamp-2">{quiz.title}</h3>
-                                    <p className="text-white/70 text-xs line-clamp-2">{quiz.description}</p>
-                                </div>
-                            </button>
+                                    <div className="relative z-10">
+                                        <h3 className="text-white font-bold text-lg leading-tight mb-1 line-clamp-2">{quiz.title}</h3>
+                                        <p className="text-white/70 text-xs line-clamp-2">{quiz.description}</p>
+                                    </div>
+                                </button>
+                                {quiz.created_by === profile?.id && (
+                                    <button
+                                        onClick={(e) => deleteCustomQuiz(e, quiz.id)}
+                                        className="absolute top-2 right-2 w-8 h-8 bg-black/40 hover:bg-red-500 rounded-full flex items-center justify-center text-white/70 hover:text-white transition-all z-20 backdrop-blur-sm"
+                                    >
+                                        <span className="material-symbols-outlined text-lg">delete</span>
+                                    </button>
+                                )}
+                            </div>
                         ))}
 
                         <button onClick={() => setView('create')} className="h-[160px] rounded-2xl border-2 border-dashed border-white/10 flex flex-col items-center justify-center gap-2 hover:bg-white/5 transition-colors">
