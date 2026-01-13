@@ -7,6 +7,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 const QuestsTab = ({ tasks, fetchEconomyData, balance, addCoins }) => {
     const { user, profile } = useTelegramAuth();
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedTask, setSelectedTask] = useState(null);
 
     // Form
     const [title, setTitle] = useState('');
@@ -54,6 +55,7 @@ const QuestsTab = ({ tasks, fetchEconomyData, balance, addCoins }) => {
 
     return (
         <section className="animate-fade-in relative">
+            {/* ... Header ... */}
             <div className="flex items-center justify-between mb-4 px-1">
                 <h2 className="text-xl font-bold dark:text-white text-slate-800">Квесты</h2>
                 <button
@@ -73,7 +75,11 @@ const QuestsTab = ({ tasks, fetchEconomyData, balance, addCoins }) => {
                     </div>
                 )}
                 {tasks.map(task => (
-                    <div key={task.id} className="glass-panel rounded-xl p-4 flex items-center gap-4 active:scale-[0.98] transition-all">
+                    <div
+                        key={task.id}
+                        onClick={() => setSelectedTask(task)}
+                        className="glass-panel rounded-xl p-4 flex items-center gap-4 active:scale-[0.98] transition-all cursor-pointer"
+                    >
                         <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0 text-primary">
                             <span className="material-symbols-outlined">{task.icon || 'task_alt'}</span>
                         </div>
@@ -87,7 +93,10 @@ const QuestsTab = ({ tasks, fetchEconomyData, balance, addCoins }) => {
                         <div className="flex flex-col items-end gap-1">
                             <span className="text-xs font-bold text-gold">+{task.price} 🪙</span>
                             <button
-                                onClick={() => handleCompleteTask(task)}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleCompleteTask(task);
+                                }}
                                 className="w-8 h-8 rounded-full bg-surface-dark border border-white/10 flex items-center justify-center text-white/30 hover:bg-primary hover:text-white hover:border-primary transition-all"
                             >
                                 <span className="material-symbols-outlined text-[20px]">check</span>
@@ -97,13 +106,14 @@ const QuestsTab = ({ tasks, fetchEconomyData, balance, addCoins }) => {
                 ))}
             </div>
 
-            {/* Modal */}
+            {/* Create Modal */}
             <AnimatePresence>
                 {isModalOpen && (
                     <motion.div
                         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                         className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-end sm:items-center justify-center sm:p-4"
                     >
+                        {/* ... Existing Create Modal Content ... */}
                         <motion.div
                             initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
                             className="w-full sm:max-w-sm bg-[#1A1A1A] border-t sm:border border-white/10 rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl"
@@ -156,6 +166,67 @@ const QuestsTab = ({ tasks, fetchEconomyData, balance, addCoins }) => {
                                     className="w-full bg-primary text-white font-bold py-4 rounded-xl mt-4 shadow-lg shadow-primary/20 active:scale-95 transition-all"
                                 >
                                     {loading ? "Создание..." : "Создать Квест"}
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Detail Modal */}
+            <AnimatePresence>
+                {selectedTask && (
+                    <motion.div
+                        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center p-4"
+                        onClick={() => setSelectedTask(null)}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+                            className="bg-[#1e1e1e] border border-white/10 w-full max-w-sm rounded-3xl p-6 shadow-2xl relative overflow-hidden"
+                            onClick={e => e.stopPropagation()}
+                        >
+                            <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-primary/20 to-transparent pointer-events-none" />
+
+                            <div className="relative z-10">
+                                <div className="flex justify-between items-start mb-4">
+                                    <div className="w-16 h-16 rounded-2xl bg-primary/20 flex items-center justify-center text-primary text-4xl shadow-lg shadow-primary/10">
+                                        <span className="material-symbols-outlined">{selectedTask.icon || 'task_alt'}</span>
+                                    </div>
+                                    <button onClick={() => setSelectedTask(null)} className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-white/50 hover:bg-white/10">
+                                        <span className="material-symbols-outlined">close</span>
+                                    </button>
+                                </div>
+
+                                <h3 className="text-2xl font-bold text-white mb-2 leading-tight">{selectedTask.title}</h3>
+
+                                <div className="bg-white/5 rounded-xl p-4 mb-6 border border-white/5">
+                                    <p className="text-white/80 text-sm leading-relaxed whitespace-pre-wrap">
+                                        {selectedTask.description || "Нет описания."}
+                                    </p>
+                                </div>
+
+                                <div className="flex items-center justify-between mb-6">
+                                    <div className="flex flex-col">
+                                        <span className="text-[10px] font-bold text-white/30 uppercase tracking-widest">Награда</span>
+                                        <span className="text-2xl font-black text-gold drop-shadow-sm">+{selectedTask.price} 🪙</span>
+                                    </div>
+                                    {selectedTask.created_by === profile?.id && (
+                                        <div className="px-3 py-1 rounded-full bg-white/5 border border-white/5 text-[10px] font-bold text-white/30 uppercase">
+                                            Вы автор
+                                        </div>
+                                    )}
+                                </div>
+
+                                <button
+                                    onClick={() => {
+                                        handleCompleteTask(selectedTask);
+                                        setSelectedTask(null);
+                                    }}
+                                    className="w-full py-4 bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl text-white font-bold shadow-lg shadow-green-500/20 flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
+                                >
+                                    <span className="material-symbols-outlined">check_circle</span>
+                                    Выполнить Квест
                                 </button>
                             </div>
                         </motion.div>

@@ -73,9 +73,12 @@ const RedRoom = () => {
                                 if (!error) {
                                     alert("Сигнал отправлен! 😈");
                                     // Telegram Notification
-                                    import('../services/telegramNotificationService').then(({ TelegramService }) => {
-                                        TelegramService.notifyIntimacySignal(profile.partner_id, profile.first_name);
-                                    });
+                                    import('../services/telegramNotificationService')
+                                        .then(({ TelegramService }) => {
+                                            TelegramService.notifyIntimacySignal(profile.partner_id, profile.first_name)
+                                                .catch(err => console.error("Signal Error:", err));
+                                        })
+                                        .catch(err => console.error("Service Import Error:", err));
                                 }
                             }
                         }}
