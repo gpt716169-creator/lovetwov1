@@ -22,14 +22,14 @@ const QuizzesList = () => {
 
     useEffect(() => {
         fetchQuizzes();
-        if (profile?.id) {
-            fetchAttempts();
-            // Subscribe to updates for real-time status changes
-            const channel = supabase.channel('quiz_attempts')
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'quiz_attempts' }, fetchAttempts)
-                .subscribe();
-            return () => supabase.removeChannel(channel);
-        }
+        if (profile?.id) fetchAttempts();
+
+        // Polling every 1s for status updates
+        const interval = setInterval(() => {
+            if (profile?.id) fetchAttempts();
+        }, 1000);
+
+        return () => clearInterval(interval);
     }, [profile]);
 
     const fetchQuizzes = async () => {
@@ -65,35 +65,33 @@ const QuizzesList = () => {
     const viewResult = (attempt) => {
         setCurrentAttempt(attempt);
         setCurrentQuiz(attempt.quiz);
+        setAiResult(null); // Reset AI result when opening new result view
         setView('result');
     };
 
     // --- GAMEPLAY LOGIC ---
 
-    const handleAnswer = (option, isCustomInput = false) => {
+    const handleAnswer = async (option) => {
         // If option is string, save it directly (for "Custom variant" inputs later if we support them fully)
         // For now, index or string.
-        // User asked for "Svoi variant" (Own answer).
-        // Let's assume options are strings mostly.
-        const val = isCustomInput ? option : currentQuiz.questions[step].options.indexOf(option);
+        const val = currentQuiz.questions[step].options.indexOf(currentQuiz.questions[step].options[option]) !== -1 ? option : option;
 
-        setAnswers(prev => ({ ...prev, [step]: val }));
+        // Optimistic update for UI highlighting
+        const newAnswers = { ...answers, [step]: val };
+        setAnswers(newAnswers);
+
+        // DELAY for visual feedback (1s)
+        await new Promise(r => setTimeout(r, 600));
 
         if (step < currentQuiz.questions.length - 1) {
             setStep(prev => prev + 1);
         } else {
             // Finished
-            if (view === 'play_init') submitInitiator(val); // pass last val to update state before submit? 
+            if (view === 'play_init') submitInitiator(val);
             if (view === 'play_partner') submitPartner(val);
         }
     };
 
-    // Correction: State update is async, so handleAnswer might not have the last answer in 'answers' yet.
-    // Better to have specific submit functions that take the final answer set.
-    // Simplified: Just wait for user to click "Finish" or auto-submit.
-    // I'll make the last step show a "Finish" button.
-
-    // Actually, let's use a "Finish" button on the last step for clarity.
 
     const submitInitiator = async (finalAnswerVal) => {
         const finalAnswers = { ...answers, [step]: finalAnswerVal }; // Include last step
@@ -106,7 +104,7 @@ const QuizzesList = () => {
             status: 'waiting_partner'
         });
         setView('list');
-        alert("Ответы сохранены! Теперь партнер должен угадать их.");
+        fetchAttempts();
     };
 
     const submitPartner = async (finalAnswerVal) => {
@@ -120,8 +118,8 @@ const QuizzesList = () => {
             .eq('id', currentAttempt.id);
 
         setView('list');
-        // Trigger AI analysis immediately? Or let user click button in Result view.
-        // Let's let them click button.
+        fetchAttempts();
+        alert("Квиз завершен! Можно смотреть результаты.");
     };
 
     // --- AI ANALYSIS ---
@@ -134,7 +132,7 @@ const QuizzesList = () => {
             const quizPoints = attempt.quiz.questions.map((q, i) => {
                 const initAnsIdx = attempt.initiator_answers[i];
                 const partGuessIdx = attempt.partner_guesses[i];
-                const initAns = q.options[initAnsIdx] || "Свой ответ"; // Handle text inputs if implemented
+                const initAns = q.options[initAnsIdx] || "Свой ответ";
                 const partGuess = q.options[partGuessIdx] || "Свой ответ";
                 return `Вопрос: ${q.question}. ${attempt.initiator?.first_name} выбрал: "${initAns}". ${attempt.partner?.first_name || 'Партнер'} думал, что выберет: "${partGuess}".`;
             }).join('\n');
@@ -295,15 +293,36 @@ const QuizzesList = () => {
                         </div>
 
                         <div className="grid grid-cols-1 gap-3">
-                            {currentQuiz.questions[step].options.map((option, idx) => (
-                                <button
-                                    key={idx}
-                                    onClick={() => handleAnswer(idx)}
-                                    className="p-4 rounded-xl border border-white/10 font-medium text-left transition-all bg-surface-dark text-white/80 hover:bg-white/10 active:scale-[0.98]"
-                                >
-                                    {option}
-                                </button>
-                            ))}
+                            {currentQuiz.questions[step].options.map((option, idx) => {
+                                const isSelected = answers[step] === idx;
+                                let bgClass = "bg-surface-dark text-white/80 hover:bg-white/10";
+
+                                // LOGIC FOR PLAY_PARTNER (Guessing)
+                                if (view === 'play_partner' && isSelected) {
+                                    const initiatorAnswer = currentAttempt.initiator_answers[step];
+                                    if (initiatorAnswer === idx) {
+                                        bgClass = "bg-green-500/20 border-green-500 text-green-400"; // Correct!
+                                    } else {
+                                        bgClass = "bg-red-500/20 border-red-500 text-red-400"; // Wrong!
+                                    }
+                                } else if (view === 'play_init' && isSelected) {
+                                    bgClass = "bg-primary/20 border-primary text-primary";
+                                }
+
+                                return (
+                                    <button
+                                        key={idx}
+                                        onClick={() => handleAnswer(idx)}
+                                        className={clsx(
+                                            "p-4 rounded-xl border font-medium text-left transition-all active:scale-[0.98]",
+                                            isSelected ? "border-transparent" : "border-white/10",
+                                            bgClass
+                                        )}
+                                    >
+                                        {option}
+                                    </button>
+                                );
+                            })}
                         </div>
                     </div>
 

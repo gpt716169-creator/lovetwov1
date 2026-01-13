@@ -199,15 +199,8 @@ const Dashboard = () => {
             <RelationshipCounter />
 
             {/* Row 2: Grid Split (Pulse & Goals) */}
-            <div className="grid grid-cols-2 gap-4">
-                {/* Pulse Button Card */}
-                <div className="glass-panel rounded-3xl p-4 flex flex-col justify-between aspect-square relative">
-                    <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-50 pointer-events-none"></div>
-                    <span className="text-white/60 text-xs font-bold uppercase relative z-10">Импульсы</span>
-                    <ImpulseButton />
-                </div>
-
-                {/* Goals Widget */}
+            {/* Goals Widget - Full Width */}
+            <div className="flex-1 min-h-[180px]">
                 <GoalsWidget />
             </div>
 

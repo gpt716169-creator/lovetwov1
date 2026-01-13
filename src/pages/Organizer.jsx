@@ -260,7 +260,7 @@ const Organizer = () => {
                             initial={{ y: 50, opacity: 0 }}
                             animate={{ y: 0, opacity: 1 }}
                             exit={{ y: 50, opacity: 0 }}
-                            className="bg-[#1e1e1e] border border-white/10 w-full max-w-sm rounded-3xl p-6 shadow-2xl"
+                            className="bg-[#1e1e1e] border border-white/10 w-full max-w-sm rounded-3xl p-6 shadow-2xl relative"
                         >
                             <div className="flex justify-between items-center mb-6">
                                 <h3 className="text-xl font-bold text-white">Новое событие</h3>
@@ -306,7 +306,7 @@ const Organizer = () => {
 
                                 <button
                                     onClick={addEvent}
-                                    className="mt-2 w-full py-4 bg-green-500 hover:bg-green-600 rounded-xl font-bold text-white shadow-lg shadow-green-500/20"
+                                    className="mt-4 w-full py-4 bg-green-500 hover:bg-green-600 rounded-xl font-bold text-white shadow-lg shadow-green-500/20"
                                 >
                                     Сохранить
                                 </button>

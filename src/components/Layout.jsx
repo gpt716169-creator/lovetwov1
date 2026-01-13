@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { useThemeStore } from '../store/themeStore';
@@ -27,17 +27,42 @@ const NavItem = ({ to, icon, label, isActive }) => {
 
 const Layout = () => {
     const location = useLocation();
+    const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
+
+    useEffect(() => {
+        const handleFocus = (e) => {
+            if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) {
+                setIsKeyboardOpen(true);
+            }
+        };
+        const handleBlur = () => {
+            // Small delay to allow focus to switch
+            setTimeout(() => setIsKeyboardOpen(false), 100);
+        };
+
+        window.addEventListener('focusin', handleFocus);
+        window.addEventListener('focusout', handleBlur);
+
+        return () => {
+            window.removeEventListener('focusin', handleFocus);
+            window.removeEventListener('focusout', handleBlur);
+        };
+    }, []);
 
     return (
         <div className="max-w-md mx-auto relative flex flex-col w-full h-full min-h-screen overflow-x-hidden bg-background-light dark:bg-background-dark text-slate-900 dark:text-white font-display">
 
             {/* Main Content Area */}
-            <main className="flex-1 pb-24">
+            <main className={clsx("flex-1", !isKeyboardOpen && "pb-24")}>
                 <Outlet />
             </main>
 
             {/* Bottom Navigation */}
-            <nav className="fixed bottom-0 w-full max-w-md glass-nav pb-6 pt-2 px-6 z-50 rounded-t-3xl">
+            {/* Hide when keyboard likely open */}
+            <nav className={clsx(
+                "fixed bottom-0 w-full max-w-md glass-nav pb-6 pt-2 px-6 z-50 rounded-t-3xl transition-transform duration-300",
+                isKeyboardOpen ? "translate-y-full" : "translate-y-0"
+            )}>
                 <ul className="flex justify-between items-center">
                     <NavItem
                         to="/"

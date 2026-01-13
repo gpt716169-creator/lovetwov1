@@ -18,13 +18,20 @@ const TicTacToe = ({ gameId, onClose }) => {
     useEffect(() => {
         if (gameId) fetchGame();
 
+        const interval = setInterval(() => {
+            if (gameId) fetchGame();
+        }, 1000);
+
         const channel = supabase.channel(`game_${gameId}`)
             .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'games', filter: `id=eq.${gameId}` },
                 (payload) => setGame(payload.new)
             )
             .subscribe();
 
-        return () => supabase.removeChannel(channel);
+        return () => {
+            clearInterval(interval);
+            supabase.removeChannel(channel);
+        };
     }, [gameId]);
 
     const fetchGame = async () => {
