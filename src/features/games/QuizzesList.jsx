@@ -167,14 +167,18 @@ const QuizzesList = () => {
             ${quizPoints}
 
             ЗАДАЧА:
-            1. Проанализируй, насколько хорошо партнеры знают друг друга (совпадения выбора и догадки).
-            2. Выдели темы, где возникло недопонимание (если партнер не угадал выбор).
-            3. Дай конкретный, добрый и полезный совет для этой пары, основываясь ИМЕННО на этих ответах. Избегай общих фраз.
+            1. Проанализируй, насколько хорошо партнеры знают друг друга.
+            2. Выдели конкретные совпадения и разногласия.
+            3. Дай добрый, конкретный совет.
 
             ФОРМАТ ОТВЕТА (JSON):
             {
-                "summary": "Краткое резюме совместимости (1-2 предложения)",
-                "detailed_analysis": "Подробный разбор совпадений и несовпадений + Совет."
+                "summary": "Общее резюме (1-2 предложения)",
+                "detailed_analysis": {
+                    "matches": { "1": "Совпадение 1...", "2": "Совпадение 2..." },
+                    "mismatches": { "1": "Различие 1...", "2": "Различие 2..." },
+                    "advice": "Твой совет..."
+                }
             }
             `;
 
@@ -400,7 +404,9 @@ const QuizzesList = () => {
                     <div className="bg-surface-dark p-6 rounded-3xl border border-white/10 text-center">
                         <span className="text-6xl mb-2 block">🔮</span>
                         <h2 className="text-2xl font-bold text-white mb-2">Анализ Совместимости</h2>
-                        <p className="text-white/50 text-sm">Подождите, ИИ психолог анализирует ваши ответы...</p>
+                        <p className="text-white/50 text-sm">
+                            {aiResult ? "ИИ проанализировал ваши ответы" : "Подождите, ИИ психолог анализирует ваши ответы..."}
+                        </p>
                     </div>
 
                     {!aiResult ? (
@@ -412,16 +418,73 @@ const QuizzesList = () => {
                         </button>
                     ) : (
                         <div className="flex flex-col gap-4 animate-fade-in">
-                            <div className="bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border border-indigo-500/20 p-5 rounded-2xl">
-                                <h3 className="font-bold text-indigo-300 mb-2 text-lg">Вердикт Психолога</h3>
-                                <p className="text-white/90 leading-relaxed text-sm whitespace-pre-wrap">
-                                    {aiResult.detailed_analysis}
+                            {/* Summary Card */}
+                            <div className="p-5 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border border-indigo-500/20 rounded-2xl">
+                                <h4 className="font-bold text-indigo-300 text-xs uppercase mb-2">Резюме</h4>
+                                <p className="text-white text-sm font-medium leading-relaxed">
+                                    {aiResult.summary}
                                 </p>
                             </div>
-                            <div className="p-4 bg-white/5 rounded-xl">
-                                <h4 className="font-bold text-white/50 text-xs uppercase mb-2">Резюме</h4>
-                                <p className="text-white text-sm">{aiResult.summary}</p>
-                            </div>
+
+                            {/* Detailed Analysis / Structured or Fallback */}
+                            {aiResult.detailed_analysis && typeof aiResult.detailed_analysis === 'object' ? (
+                                <>
+                                    {/* Matches */}
+                                    {aiResult.detailed_analysis.matches && (
+                                        <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-xl">
+                                            <h4 className="font-bold text-green-400 text-xs uppercase mb-3 flex items-center gap-2">
+                                                <span className="material-symbols-outlined text-sm">check_circle</span>
+                                                Совпадения
+                                            </h4>
+                                            <ul className="flex flex-col gap-2">
+                                                {Object.values(aiResult.detailed_analysis.matches).map((m, i) => (
+                                                    <li key={i} className="text-white/80 text-xs leading-relaxed pl-3 border-l-2 border-green-500/30">
+                                                        {m}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+
+                                    {/* Mismatches */}
+                                    {aiResult.detailed_analysis.mismatches && (
+                                        <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
+                                            <h4 className="font-bold text-red-400 text-xs uppercase mb-3 flex items-center gap-2">
+                                                <span className="material-symbols-outlined text-sm">cancel</span>
+                                                Различия
+                                            </h4>
+                                            <ul className="flex flex-col gap-2">
+                                                {Object.values(aiResult.detailed_analysis.mismatches).map((m, i) => (
+                                                    <li key={i} className="text-white/80 text-xs leading-relaxed pl-3 border-l-2 border-red-500/30">
+                                                        {m}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+
+                                    {/* Advice */}
+                                    {aiResult.detailed_analysis.advice && (
+                                        <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl">
+                                            <h4 className="font-bold text-amber-400 text-xs uppercase mb-2 flex items-center gap-2">
+                                                <span className="material-symbols-outlined text-sm">lightbulb</span>
+                                                Совет Психолога
+                                            </h4>
+                                            <p className="text-white/90 text-sm leading-relaxed whitespace-pre-wrap">
+                                                {aiResult.detailed_analysis.advice}
+                                            </p>
+                                        </div>
+                                    )}
+                                </>
+                            ) : (
+                                // Fallback for simple string analysis
+                                <div className="p-4 bg-white/5 rounded-xl">
+                                    <h4 className="font-bold text-white/50 text-xs uppercase mb-2">Детали</h4>
+                                    <p className="text-white text-sm whitespace-pre-wrap leading-relaxed">
+                                        {aiResult.detailed_analysis || "Нет подробностей"}
+                                    </p>
+                                </div>
+                            )}
                         </div>
                     )}
 
