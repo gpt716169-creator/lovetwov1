@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { useThemeStore } from '../store/themeStore';
+import { useTelegramAuth } from '../features/auth/TelegramAuth';
+import { supabase } from '../lib/supabase';
 
 const NavItem = ({ to, icon, label, isActive }) => {
     return (
