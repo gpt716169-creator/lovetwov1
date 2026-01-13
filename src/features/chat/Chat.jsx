@@ -190,11 +190,11 @@ const Chat = () => {
             </div>
 
             {/* Input Area */}
-            <form onSubmit={sendMessage} className="p-3 bg-surface-dark border-t border-white/5 flex gap-2 items-end">
+            <form onSubmit={sendMessage} className="p-3 bg-surface-dark border-t border-white/5 flex gap-2 items-end pb-safe">
                 <input
                     value={newMessage}
                     onChange={e => setNewMessage(e.target.value)}
-                    placeholder="Message..."
+                    placeholder="Сообщение..."
                     className="flex-1 bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white text-sm focus:border-primary outline-none min-h-[44px] max-h-[100px]"
                 />
                 <button

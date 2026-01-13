@@ -38,12 +38,74 @@ const QuizzesList = () => {
     };
 
     const fetchAttempts = async () => {
-        const { data } = await supabase.from('quiz_attempts')
+        // Prevent race conditions or clearing if profile is loading
+        if (!profile?.id) return;
+
+        const { data, error } = await supabase.from('quiz_attempts')
             .select('*, quiz:quizzes(*), initiator:initiator_id(first_name), partner:partner_id(first_name)')
             .or(`initiator_id.eq.${profile.id},partner_id.eq.${profile.id}`)
             .order('created_at', { ascending: false }); // Show newest first
-        if (data) setActiveAttempts(data);
+
+        if (error) {
+            console.error("Error fetching attempts:", error);
+        } else if (data) {
+            setActiveAttempts(data);
+        }
     };
+
+    // ... (rest of code) ...
+
+    const quizPoints = attempt.quiz.questions.map((q, i) => {
+        // Ensure we handle both string keys and number keys, and fallback safely
+        const iKey = attempt.initiator_answers[i] !== undefined ? i : String(i);
+        const pKey = attempt.partner_guesses[i] !== undefined ? i : String(i);
+
+        const initAnsIdx = attempt.initiator_answers?.[iKey];
+        const partGuessIdx = attempt.partner_guesses?.[pKey];
+
+        const initAns = (initAnsIdx !== undefined && initAnsIdx !== null) ? q.options[initAnsIdx] : "НЕ ОТВЕТИЛ";
+        const partGuess = (partGuessIdx !== undefined && partGuessIdx !== null) ? q.options[partGuessIdx] : "НЕ ОТВЕТИЛ";
+
+        const initiatorName = attempt.initiator?.first_name || 'Инициатор';
+        const partnerName = attempt.partner?.first_name || 'Партнер';
+
+        return `Вопрос ${i + 1}: "${q.question}"
+- ${initiatorName} (отвечал про себя): "${initAns}"
+- ${partnerName} (пытался УГАДАТЬ выбор ${initiatorName}): "${partGuess}"`;
+    }).join('\n\n');
+
+    console.log("AI PROMPT DATA:", quizPoints);
+
+    const prompt = `
+            Ты - опытный семейный психолог и эксперт по отношениям. Проанализируй результаты парного квиза "${attempt.quiz.title}".
+
+            ИМЕНА:
+            - Инициатор (тот, о ком вопросы): ${attempt.initiator?.first_name || 'Инициатор'}
+            - Партнер (тот, кто угадывает): ${attempt.partner?.first_name || 'Партнер'}
+
+            ВАЖНО ПОНИМАТЬ КОНТЕКСТ:
+            1. ${attempt.initiator?.first_name || 'Инициатор'} отвечал на вопросы о СЕБЕ и СВОИХ предпочтениях.
+            2. ${attempt.partner?.first_name || 'Партнер'} пытался УГАДАТЬ, что выбрал ${attempt.initiator?.first_name || 'Инициатор'}.
+            3. Если ответы не совпадают, это значит, что ${attempt.partner?.first_name || 'Партнер'} ошибся в своих предположениях.
+
+            КОНТЕКСТ И ОТВЕТЫ:
+            ${quizPoints}
+
+            ЗАДАЧА:
+            1. Проанализируй, насколько хорошо ${attempt.partner?.first_name || 'Партнер'} знает ${attempt.initiator?.first_name || 'Инициатор'}.
+            2. Выдели темы, где возникло недопонимание.
+            3. Дай добрый совет, используй ИМЕНА в обращении.
+
+            ФОРМАТ ОТВЕТА (JSON):
+            {
+                "summary": "Общее резюме с использованием имен.",
+                "detailed_analysis": {
+                    "matches": { "1": "${attempt.partner?.first_name} верно заметил(а), что...", "2": "..." },
+                    "mismatches": { "1": "${attempt.partner?.first_name} думал(а)..., но ${attempt.initiator?.first_name}...", "2": "..." },
+                    "advice": "Совет для ${attempt.initiator?.first_name} и ${attempt.partner?.first_name}..."
+                }
+            }
+            `;
 
     // --- DELETE FUNCTIONS ---
     const deleteAttempt = async (e, id) => {
