@@ -227,18 +227,31 @@ const Games = () => {
                             </div>
                         )}
 
-                        {/* Recommendations Banner */}
+                        {/* Relationship Tools Section */}
                         {!selectedGameId && (
-                            <div className="mt-4 p-5 bg-gradient-to-r from-pink-500/10 to-purple-500/10 rounded-2xl border border-white/5">
-                                <h3 className="text-white font-bold mb-2 text-sm">Совет дня</h3>
-                                <p className="text-white/60 text-xs leading-relaxed mb-3">
-                                    На расстоянии? Поиграйте в "Правда или Действие" по видеосвязи или используйте наш "Конфликт Менеджер" если возникло недопонимание.
-                                </p>
+                            <div className="mt-8 flex flex-col gap-3 animate-fade-in">
+                                <h3 className="text-white/50 text-xs font-bold uppercase tracking-wider pl-1">Отношения & Психология</h3>
+
                                 <button
                                     onClick={() => setShowMediator(true)}
-                                    className="px-4 py-2 bg-white/10 rounded-lg text-white text-xs font-bold hover:bg-white/20 transition-colors"
+                                    className="w-full bg-gradient-to-r from-violet-600 to-fuchsia-600 rounded-2xl p-5 flex items-center justify-between shadow-lg shadow-violet-500/20 active:scale-[0.98] transition-all relative overflow-hidden group"
                                 >
-                                    Открыть Медиатор
+                                    <div className="flex flex-col text-left z-10 relative">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <span className="material-symbols-outlined text-white text-2xl">psychology</span>
+                                            <h4 className="text-white font-bold text-lg">AI Медиатор</h4>
+                                        </div>
+                                        <p className="text-white/80 text-xs max-w-[200px] leading-relaxed">
+                                            Возникло недопонимание? ИИ психолог поможет найти компромисс.
+                                        </p>
+                                    </div>
+
+                                    <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center z-10 backdrop-blur-sm group-hover:bg-white/30 transition-colors">
+                                        <span className="material-symbols-outlined text-white">arrow_forward</span>
+                                    </div>
+
+                                    {/* Decorative Background Icons */}
+                                    <span className="absolute -right-4 -bottom-6 text-white/10 text-9xl material-symbols-outlined rotate-12">handshake</span>
                                 </button>
                             </div>
                         )}
