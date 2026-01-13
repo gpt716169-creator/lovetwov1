@@ -142,21 +142,28 @@ const QuizzesList = () => {
 
             const openai = new OpenAI({ apiKey, dangerouslyAllowBrowser: true });
 
+            console.log("Preparing AI prompt...");
+
             const quizPoints = attempt.quiz.questions.map((q, i) => {
                 // Ensure we handle both string keys and number keys, and fallback safely
-                const initAnsIdx = attempt.initiator_answers ? (attempt.initiator_answers[i] ?? attempt.initiator_answers[String(i)]) : null;
-                const partGuessIdx = attempt.partner_guesses ? (attempt.partner_guesses[i] ?? attempt.partner_guesses[String(i)]) : null;
+                const iKey = attempt.initiator_answers[i] !== undefined ? i : String(i);
+                const pKey = attempt.partner_guesses[i] !== undefined ? i : String(i);
 
-                const initAns = (initAnsIdx !== null && q.options[initAnsIdx]) ? q.options[initAnsIdx] : "Нет ответа";
-                const partGuess = (partGuessIdx !== null && q.options[partGuessIdx]) ? q.options[partGuessIdx] : "Нет ответа";
+                const initAnsIdx = attempt.initiator_answers?.[iKey];
+                const partGuessIdx = attempt.partner_guesses?.[pKey];
+
+                const initAns = (initAnsIdx !== undefined && initAnsIdx !== null) ? q.options[initAnsIdx] : "НЕ ОТВЕТИЛ";
+                const partGuess = (partGuessIdx !== undefined && partGuessIdx !== null) ? q.options[partGuessIdx] : "НЕ ОТВЕТИЛ";
 
                 return `Вопрос ${i + 1}: "${q.question}"\n- ${attempt.initiator?.first_name || 'Инициатор'} выбрал: "${initAns}"\n- ${attempt.partner?.first_name || 'Партнер'} предполагал: "${partGuess}"`;
             }).join('\n\n');
 
+            console.log("AI PROMPT DATA:", quizPoints);
+
             const prompt = `
             Ты - опытный семейный психолог и эксперт по отношениям. Проанализируй результаты парного квиза "${attempt.quiz.title}".
 
-            КОНТЕКСТ И ОТВЕТЫ:
+            КОНТЕКСТ И ОТВЕТЫ (ВНИМАНИЕ: если написано "НЕ ОТВЕТИЛ", значит данных нет, учитывай это):
             ${quizPoints}
 
             ЗАДАЧА:
@@ -177,7 +184,19 @@ const QuizzesList = () => {
                 response_format: { type: "json_object" }
             });
 
-            const result = JSON.parse(completion.choices[0].message.content);
+            const content = completion.choices[0].message.content;
+            console.log("AI RAW RESPONSE:", content);
+
+            // Sanitize JSON (remove markdown code blocks if present)
+            const jsonStr = content.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+
+            let result;
+            try {
+                result = JSON.parse(jsonStr);
+            } catch (parseError) {
+                console.error("JSON Parse Error:", parseError, "Content:", jsonStr);
+                throw new Error("Ошибка обработки ответа от ИИ (JSON Parse)");
+            }
 
             // Save to DB
             const { error } = await supabase.from('quiz_attempts')
@@ -186,17 +205,17 @@ const QuizzesList = () => {
 
             if (error) {
                 console.error("Failed to save analysis:", error);
-                // We show result anyway, but warn user silently in console
             } else {
-                // Update local state to reflect saved analysis
+                // Update local state and list
                 setCurrentAttempt(prev => ({ ...prev, ai_analysis: result }));
+                setAiResult(result); // Set immediately to show result
+                fetchAttempts();
             }
 
-            setAiResult(result);
             setView('result');
 
         } catch (e) {
-            console.error(e);
+            console.error("AI Analysis Error:", e);
             alert("Ошибка AI Анализа: " + e.message);
             setView('list');
         }
