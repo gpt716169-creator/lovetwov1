@@ -8,6 +8,8 @@ import RedRoom from './pages/RedRoom';
 import Organizer from './pages/Organizer';
 import { TelegramAuthProvider } from './features/auth/TelegramAuth';
 
+import Chat from './features/chat/Chat';
+
 function App() {
   return (
     <TelegramAuthProvider>
@@ -16,6 +18,7 @@ function App() {
           <Route path="/" element={<Layout />}>
             <Route index element={<Dashboard />} />
             <Route path="economy" element={<Economy />} />
+            <Route path="chat" element={<Chat />} />
             <Route path="games" element={<Games />} />
             <Route path="red-room" element={<RedRoom />} />
             <Route path="organizer" element={<Organizer />} />

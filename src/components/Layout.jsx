@@ -28,6 +28,7 @@ const NavItem = ({ to, icon, label, isActive }) => {
 const Layout = () => {
     const location = useLocation();
     const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
+    const { profile } = useTelegramAuth() || {}; // Use safe access
 
     useEffect(() => {
         const handleFocus = (e) => {
@@ -36,18 +37,31 @@ const Layout = () => {
             }
         };
         const handleBlur = () => {
-            // Small delay to allow focus to switch
             setTimeout(() => setIsKeyboardOpen(false), 100);
         };
 
         window.addEventListener('focusin', handleFocus);
         window.addEventListener('focusout', handleBlur);
 
+        // --- ONLINE HEARTBEAT ---
+        const updateHeartbeat = async () => {
+            if (profile?.id) {
+                await supabase.from('profiles').update({ last_seen: new Date().toISOString() }).eq('id', profile.id);
+            }
+        };
+
+        // Update immediately and then every 2 minutes
+        if (profile?.id) updateHeartbeat();
+        const heartbeatInterval = setInterval(() => {
+            if (profile?.id) updateHeartbeat();
+        }, 120000);
+
         return () => {
             window.removeEventListener('focusin', handleFocus);
             window.removeEventListener('focusout', handleBlur);
+            clearInterval(heartbeatInterval);
         };
-    }, []);
+    }, [profile?.id]); // Depend only on ID to avoid excessive re-runs
 
     return (
         <div className="max-w-md mx-auto relative flex flex-col w-full h-full min-h-screen overflow-x-hidden bg-background-light dark:bg-background-dark text-slate-900 dark:text-white font-display">
@@ -58,42 +72,26 @@ const Layout = () => {
             </main>
 
             {/* Bottom Navigation */}
-            {/* Hide when keyboard likely open */}
             <nav className={clsx(
-                "fixed bottom-0 w-full max-w-md glass-nav pb-6 pt-2 px-6 z-50 rounded-t-3xl transition-transform duration-300",
+                "fixed bottom-0 w-full max-w-md glass-nav pb-6 pt-2 px-2 z-50 rounded-t-3xl transition-transform duration-300",
                 isKeyboardOpen ? "translate-y-full" : "translate-y-0"
             )}>
-                <ul className="flex justify-between items-center">
-                    <NavItem
-                        to="/"
-                        icon="dashboard"
-                        label="Home"
-                        isActive={location.pathname === '/'}
-                    />
-                    <NavItem
-                        to="/economy"
-                        icon="monetization_on"
-                        label="Hub"
-                        isActive={location.pathname === '/economy'}
-                    />
-                    <NavItem
-                        to="/games"
-                        icon="stadia_controller"
-                        label="Игры"
-                        isActive={location.pathname === '/games'}
-                    />
-                    <NavItem
-                        to="/organizer"
-                        icon="calendar_month"
-                        label="Планы"
-                        isActive={location.pathname === '/organizer'}
-                    />
-                    <NavItem
-                        to="/red-room"
-                        icon="lock"
-                        label="Red"
-                        isActive={location.pathname === '/red-room'}
-                    />
+                <ul className="flex justify-between items-center text-xs">
+                    <NavItem to="/" icon="dashboard" label="Home" isActive={location.pathname === '/'} />
+                    <NavItem to="/economy" icon="monetization_on" label="Hub" isActive={location.pathname === '/economy'} />
+
+                    {/* Chat is Central */}
+                    <div className="relative -top-5">
+                        <Link to="/chat" className={clsx(
+                            "w-16 h-16 rounded-full flex items-center justify-center shadow-lg transition-transform active:scale-95 border-4 border-[#1A1A1A]",
+                            location.pathname === '/chat' ? "bg-white text-primary" : "bg-primary text-white"
+                        )}>
+                            <span className="material-symbols-outlined text-3xl">chat_bubble</span>
+                        </Link>
+                    </div>
+
+                    <NavItem to="/games" icon="stadia_controller" label="Игры" isActive={location.pathname === '/games'} />
+                    <NavItem to="/red-room" icon="lock" label="Red" isActive={location.pathname === '/red-room'} />
                 </ul>
             </nav>
         </div>
